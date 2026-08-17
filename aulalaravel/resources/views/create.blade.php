@@ -291,7 +291,7 @@
                         <label for="preco" class="form-label">Preço Unitário (R$)</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-brazilian-real-sign input-icon"></i>
-                            <input type="number" step="0.01" min="0" id="preco" name="preco" class="form-control" placeholder="0,00" value="{{ old('preco') }}" required>
+                            <input type="number" step="0.01" min="0" id="preco" name="preco" class="form-control" placeholder="Ex: 2500.00" value="{{ old('preco') }}" required>
                         </div>
                     </div>
 
@@ -299,7 +299,7 @@
                         <label for="quantidade" class="form-label">Quantidade em Estoque</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-layer-group input-icon"></i>
-                            <input type="number" min="0" id="quantidade" name="quantidade" class="form-control" placeholder="0" value="{{ old('quantidade') }}" required>
+                            <input type="number" min="0" id="quantidade" name="quantidade" class="form-control" placeholder="Ex: 10" value="{{ old('quantidade') }}" required>
                         </div>
                     </div>
                 </div>
@@ -311,7 +311,7 @@
                         <i class="fa-solid fa-tags input-icon"></i>
                         @if(isset($categorias) && $categorias->count() > 0)
                             <select name="categoria_id" id="categoria_id" class="form-control" required>
-                                <option value="" disabled selected>Selecione uma categoria...</option>
+                                <option value="" disabled {{ old('categoria_id') ? '' : 'selected' }}>Selecione uma categoria...</option>
                                 @foreach($categorias as $categoria)
                                     <option value="{{ $categoria->id }}" data-name="{{ $categoria->nome }}" {{ old('categoria_id') == $categoria->id ? 'selected' : '' }}>
                                         {{ $categoria->nome }}
@@ -361,11 +361,11 @@
                 <div class="preview-details-grid">
                     <div>
                         <div class="preview-stat-label">Preço Unitário</div>
-                        <div class="preview-stat-value" style="color: #818cf8;" id="previewPrice">R$ 0,00</div>
+                        <div class="preview-stat-value" style="color: #818cf8;" id="previewPrice">R$ --</div>
                     </div>
                     <div>
                         <div class="preview-stat-label">Qtd. Estoque</div>
-                        <div class="preview-stat-value" id="previewQuantity">0 un.</div>
+                        <div class="preview-stat-value" id="previewQuantity">-- un.</div>
                     </div>
                 </div>
             </div>
@@ -401,14 +401,14 @@
             const val = parseFloat(precoInput.value) || 0;
             previewPrice.textContent = 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         } else {
-            previewPrice.textContent = 'R$ 0,00';
+            previewPrice.textContent = 'R$ --';
         }
 
         // Quantity
         if (qtdInput && qtdInput.value !== '') {
             previewQuantity.textContent = qtdInput.value + ' un.';
         } else {
-            previewQuantity.textContent = '0 un.';
+            previewQuantity.textContent = '-- un.';
         }
 
         // Category
@@ -432,7 +432,7 @@
     if (catSelect) catSelect.addEventListener('change', updatePreview);
     if (catSelect && catSelect.tagName === 'INPUT') catSelect.addEventListener('input', updatePreview);
 
-    // Initial update if fields have old values
+    // Initial update
     updatePreview();
 </script>
 @endsection

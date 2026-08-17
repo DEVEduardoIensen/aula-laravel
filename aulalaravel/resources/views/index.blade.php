@@ -110,7 +110,7 @@
         margin-top: 0.2rem;
     }
 
-    /* Toolbar / Search */
+    /* Toolbar / Search & Filter */
     .table-toolbar {
         background: var(--bg-surface);
         border: 1px solid var(--border-subtle);
@@ -121,7 +121,7 @@
         gap: 1rem;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 992px) {
         .table-toolbar {
             flex-direction: row;
             align-items: center;
@@ -129,10 +129,19 @@
         }
     }
 
+    .toolbar-left {
+        display: flex;
+        gap: 1rem;
+        flex: 1;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
     .search-wrapper {
         position: relative;
         flex: 1;
-        max-width: 450px;
+        min-width: 250px;
+        max-width: 420px;
     }
 
     .search-icon {
@@ -165,10 +174,27 @@
         color: var(--text-dim);
     }
 
+    .select-sort {
+        background: rgba(9, 13, 22, 0.7);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 0.68rem 1rem;
+        color: var(--text-main);
+        font-size: 0.88rem;
+        cursor: pointer;
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .select-sort:focus {
+        border-color: var(--primary);
+    }
+
     .results-count {
         font-size: 0.85rem;
         color: var(--text-muted);
         font-weight: 500;
+        white-space: nowrap;
     }
 
     /* Table Container */
@@ -308,6 +334,30 @@
         font-family: monospace;
     }
 
+    /* Delete Button */
+    .btn-delete {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-sm);
+        background: rgba(244, 63, 94, 0.1);
+        border: 1px solid rgba(244, 63, 94, 0.25);
+        color: #fb7185;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.88rem;
+    }
+
+    .btn-delete:hover {
+        background: #f43f5e;
+        color: #ffffff;
+        border-color: #f43f5e;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+    }
+
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -412,12 +462,42 @@
         </div>
     </div>
 
-    <!-- Table Toolbar with Live Search -->
+    <!-- Table Toolbar with Live Search & Sorting -->
     <div class="table-toolbar">
-        <div class="search-wrapper">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" id="liveSearch" class="search-input" placeholder="Buscar por produto ou categoria...">
+        <div class="toolbar-left">
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="liveSearch" class="search-input" placeholder="Buscar por produto ou categoria...">
+            </div>
+
+            <!-- Seletor de Ordenação -->
+            <form method="GET" action="{{ route('produtos.index') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="ordemSelect" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600; white-space: nowrap;">
+                    <i class="fa-solid fa-arrow-down-short-wide"></i> Ordem:
+                </label>
+                <select name="ordem" id="ordemSelect" class="select-sort" onchange="this.form.submit()">
+                    <option value="mais_antigos" {{ request('ordem') == 'mais_antigos' || !request('ordem') ? 'selected' : '' }}>
+                        Mais Antigos primeiro (Novos por último)
+                    </option>
+                    <option value="mais_novos" {{ request('ordem') == 'mais_novos' ? 'selected' : '' }}>
+                        Mais Novos primeiro (Topo)
+                    </option>
+                    <option value="nome_asc" {{ request('ordem') == 'nome_asc' ? 'selected' : '' }}>
+                        Nome (A - Z)
+                    </option>
+                    <option value="menor_preco" {{ request('ordem') == 'menor_preco' ? 'selected' : '' }}>
+                        Menor Preço
+                    </option>
+                    <option value="maior_preco" {{ request('ordem') == 'maior_preco' ? 'selected' : '' }}>
+                        Maior Preço
+                    </option>
+                    <option value="maior_estoque" {{ request('ordem') == 'maior_estoque' ? 'selected' : '' }}>
+                        Maior Estoque
+                    </option>
+                </select>
+            </form>
         </div>
+
         <div class="results-count">
             Mostrando <span id="visibleCount">{{ $totalProdutos }}</span> de {{ $totalProdutos }} produtos
         </div>
@@ -441,13 +521,14 @@
                 <table class="custom-table" id="produtosTable">
                     <thead>
                         <tr>
-                            <th style="width: 50px;">#ID</th>
+                            <th style="width: 50px;">#</th>
                             <th>Produto</th>
                             <th>Categoria</th>
                             <th>Preço Unitário</th>
                             <th>Qtd. Estoque</th>
                             <th>Status</th>
                             <th>Subtotal</th>
+                            <th style="text-align: center; width: 80px;">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -461,14 +542,14 @@
                                     $statusClass = 'stock-out';
                                     $statusText = 'Esgotado';
                                     $statusIcon = 'fa-xmark';
-                                } elseif ($produto->quantidade <= 5) {
+                                } elseif ($produto->quantidade <= 2) {
                                     $statusClass = 'stock-low';
                                     $statusText = 'Estoque Baixo';
                                     $statusIcon = 'fa-triangle-exclamation';
                                 }
                             @endphp
                             <tr class="product-row" data-name="{{ strtolower($produto->nome) }}" data-category="{{ strtolower($produto->categoria->nome ?? '') }}">
-                                <td style="color: var(--text-dim); font-family: monospace; font-size: 0.85rem;">#{{ $produto->id }}</td>
+                                <td style="color: var(--text-dim); font-family: monospace; font-size: 0.85rem; font-weight: 700;">#{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="product-meta">
                                         <div class="product-avatar">
@@ -476,7 +557,7 @@
                                         </div>
                                         <div>
                                             <span class="product-name">{{ $produto->nome }}</span>
-                                            <span class="product-sku">Cadastrado em {{ $produto->created_at ? $produto->created_at->format('d/m/Y') : 'Recente' }}</span>
+                                            <span class="product-sku">Cadastrado em {{ $produto->created_at ? $produto->created_at->format('d/m/Y H:i') : 'Recente' }}</span>
                                         </div>
                                     </div>
                                 </td>
@@ -490,7 +571,7 @@
                                     <span class="price-tag">R$ {{ number_format($produto->preco, 2, ',', '.') }}</span>
                                 </td>
                                 <td>
-                                    <strong style="color: var(--text-main); font-size: 0.95rem;">{{ $produto->quantidade }}</strong> <span style="color: var(--text-dim); font-size: 0.8rem;">un.</span>
+                                    <strong style="color: var(--text-main); font-size: 1rem;">{{ $produto->quantidade }}</strong> <span style="color: var(--text-dim); font-size: 0.8rem;">un.</span>
                                 </td>
                                 <td>
                                     <span class="stock-badge {{ $statusClass }}">
@@ -502,6 +583,15 @@
                                     <span class="total-col">
                                         R$ {{ number_format($produto->preco * $produto->quantidade, 2, ',', '.') }}
                                     </span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <form action="{{ route('produtos.destroy', $produto->id) }}" method="POST" onsubmit="return confirm('Deseja realmente excluir o produto &quot;{{ $produto->nome }}&quot;? Esta ação não pode ser desfeita.');" style="display: inline-block;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-delete" title="Excluir {{ $produto->nome }}">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach
